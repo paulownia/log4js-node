@@ -37,6 +37,9 @@ function MockResponse(statusCode) {
     this.end = function(chunk, encoding) {
 
     }
+    
+    this._headers = {}
+    this.__headers = {}
 
 }
 
@@ -46,6 +49,25 @@ vows.describe('log4js connect logger').addBatch({
 	    var clm = require('../lib/connect-logger');
 	    return clm;
 	},
+
+  'response header' : {
+    topic: function(clm) {
+      var ml = new MockLogger();
+      var cl = clm.connectLogger(ml, { format: ':res[x-no-such-header] - :res[content-length]' });
+      var req = new MockRequest('localhost', 'GET', 'http://localhost/');
+		  var res = new MockResponse(200);
+      res._headers['content-length'] = 100;
+
+      cl(req, res, function() {  });
+      res.end('chunk', 'encoding');
+      return ml.messages;
+    },
+
+    'should empty string if the specifed header does not exist' : function(m) {
+      assert.equal(m[0].message, ' - 100');
+    }
+  },
+
 
 	'should return a "connect logger" factory' : function(clm) {
 	    assert.isObject(clm);
